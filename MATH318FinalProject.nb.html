@@ -1758,9 +1758,48 @@ display: none;
 <div id="effect-of-world-cup-on-stock-price-and-trading-activity" class="section level1">
 <h1>Effect of World Cup on Stock Price and Trading Activity</h1>
 <!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeSh0aWR5dmVyc2UpXG5saWJyYXJ5KGx1YnJpZGF0ZSlcbmxpYnJhcnkoc3RyaW5ncilcbmBgYCJ9 -->
+<pre class="r"><code>library(tidyverse)
+library(lubridate)
+library(stringr)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc3B5ZGF0YSA9IGFzX3RpYmJsZShyZWFkLmNzdihcIjFfbWluX1NQWV8yMDA4LTIwMjEuY3N2XCIpKVxud29ybGRjdXBtYXRjaGVzID0gYXNfdGliYmxlKHJlYWQuY3N2KFwiV29ybGRDdXBNYXRjaGVzLmNzdlwiKSlcbmBgYCJ9 -->
+<pre class="r"><code>spydata = as_tibble(read.csv(&quot;1_min_SPY_2008-2021.csv&quot;))
+worldcupmatches = as_tibble(read.csv(&quot;WorldCupMatches.csv&quot;))</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc3B5ZGF0YVxuYGBgIn0= -->
+<pre class="r"><code>spydata</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxud29ybGRjdXBtYXRjaGVzID0gc2VwYXJhdGUod29ybGRjdXBtYXRjaGVzLCBEYXRldGltZSwgYyhcIkRheVwiLCBcIk1vbnRoXCIsIFwiWWVhclwiLCBcIkhvdXJcIiwgXCJNaW5cIikpXG5gYGAifQ== -->
+<pre class="r"><code>worldcupmatches = separate(worldcupmatches, Datetime, c(&quot;Day&quot;, &quot;Month&quot;, &quot;Year&quot;, &quot;Hour&quot;, &quot;Min&quot;))</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxud29ybGRjdXAyMDE0bWF0Y2hlcyA9IGZpbHRlcih3b3JsZGN1cG1hdGNoZXMsIFllYXIgPT0gXCIyMDE0XCIpXG53b3JsZGN1cDIwMTBtYXRjaGVzID0gZmlsdGVyKHdvcmxjdXBtYXRjaGVzLCBZZWFyID09IFwiMjAxMFwiKVxud29ybGRjdXAyMDE0bWF0Y2hlc1xuXG5gYGAifQ== -->
+<pre class="r"><code>worldcup2014matches = filter(worldcupmatches, Year == &quot;2014&quot;)
+worldcup2010matches = filter(worlcupmatches, Year == &quot;2010&quot;)
+worldcup2014matches
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
 </div>
 
-<div id="rmd-source-code">LS0tCnRpdGxlOiAiTUFUSCAzMTggRmluYWwgUHJvamVjdCIKb3V0cHV0OiBodG1sX25vdGVib29rCi0tLQoKIyBNQVRIIDMxOCBGaW5hbCBQcm9qZWN0CgojIEVmZmVjdCBvZiBXb3JsZCBDdXAgb24gU3RvY2sgUHJpY2UgYW5kIFRyYWRpbmcgQWN0aXZpdHkK</div>
+<div id="rmd-source-code">LS0tCnRpdGxlOiAiTUFUSCAzMTggRmluYWwgUHJvamVjdCIKb3V0cHV0OiBodG1sX25vdGVib29rCi0tLQoKIyBNQVRIIDMxOCBGaW5hbCBQcm9qZWN0CgojIEVmZmVjdCBvZiBXb3JsZCBDdXAgb24gU3RvY2sgUHJpY2UgYW5kIFRyYWRpbmcgQWN0aXZpdHkKCmBgYHtyfQpsaWJyYXJ5KHRpZHl2ZXJzZSkKbGlicmFyeShsdWJyaWRhdGUpCmxpYnJhcnkoc3RyaW5ncikKYGBgCgpgYGB7cn0Kc3B5ZGF0YSA9IGFzX3RpYmJsZShyZWFkLmNzdigiMV9taW5fU1BZXzIwMDgtMjAyMS5jc3YiKSkKd29ybGRjdXBtYXRjaGVzID0gYXNfdGliYmxlKHJlYWQuY3N2KCJXb3JsZEN1cE1hdGNoZXMuY3N2IikpCmBgYAoKYGBge3J9CnNweWRhdGEKYGBgCgpgYGB7cn0Kd29ybGRjdXBtYXRjaGVzID0gc2VwYXJhdGUod29ybGRjdXBtYXRjaGVzLCBEYXRldGltZSwgYygiRGF5IiwgIk1vbnRoIiwgIlllYXIiLCAiSG91ciIsICJNaW4iKSkKYGBgCgpgYGB7cn0Kd29ybGRjdXAyMDE0bWF0Y2hlcyA9IGZpbHRlcih3b3JsZGN1cG1hdGNoZXMsIFllYXIgPT0gIjIwMTQiKQp3b3JsZGN1cDIwMTBtYXRjaGVzID0gZmlsdGVyKHdvcmxjdXBtYXRjaGVzLCBZZWFyID09ICIyMDEwIikKd29ybGRjdXAyMDE0bWF0Y2hlcwoKYGBgCg==</div>
 
 
 

@@ -6,3 +6,29 @@ output: html_notebook
 # MATH 318 Final Project
 
 # Effect of World Cup on Stock Price and Trading Activity
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(stringr)
+```
+
+```{r}
+spydata = as_tibble(read.csv("1_min_SPY_2008-2021.csv"))
+worldcupmatches = as_tibble(read.csv("WorldCupMatches.csv"))
+```
+
+```{r}
+spydata
+```
+
+```{r}
+worldcupmatches = separate(worldcupmatches, Datetime, c("Day", "Month", "Year", "Hour", "Min"))
+```
+
+```{r}
+worldcup2014matches = filter(worldcupmatches, Year == "2014")
+worldcup2010matches = filter(worlcupmatches, Year == "2010")
+worldcup2014matches
+
+```
