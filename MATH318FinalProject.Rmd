@@ -23,12 +23,21 @@ spydata
 ```
 
 ```{r}
+spydata$date = ymd_hms(spydata$date)
+```
+
+```{r}
+spydata
+```
+
+```{r}
 worldcupmatches = separate(worldcupmatches, Datetime, c("Day", "Month", "Year", "Hour", "Min"))
 ```
 
 ```{r}
 worldcup2014matches = filter(worldcupmatches, Year == "2014")
 worldcup2010matches = filter(worlcupmatches, Year == "2010")
+
 worldcup2014matches
 
 ```
