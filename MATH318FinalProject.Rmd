@@ -9,12 +9,18 @@ output: html_notebook
 
 ```{r}
 library(tidyverse)
+library(dplyr)
+library(MASS)
 library(lubridate)
 library(stringr)
 ```
 
 ```{r}
 spydata = as_tibble(read.csv("1_min_SPY_2008-2021.csv"))
+
+```
+
+```{r}
 worldcupmatches = as_tibble(read.csv("WorldCupMatches.csv"))
 ```
 
@@ -23,21 +29,67 @@ spydata
 ```
 
 ```{r}
-spydata$date = ymd_hms(spydata$date)
-```
-
-```{r}
+spydata$date = as.POSIXct(spydata$date, format="%Y%m%d %H:%M:%S")
 spydata
 ```
 
 ```{r}
-worldcupmatches = separate(worldcupmatches, Datetime, c("Day", "Month", "Year", "Hour", "Min"))
+#Remove Rows containing NA's
+cleaned_worldcupmatches = unique(worldcupmatches[!apply(is.na(worldcupmatches) | worldcupmatches == "", 1, all),])
+#Convert Date and Time into POSIX EDT 
+cleaned_worldcupmatches$Datetime = as.POSIXct(cleaned_worldcupmatches$Datetime, format = "%e %b %Y - %R") - 60* 60
+cleaned_worldcupmatches
 ```
 
 ```{r}
-worldcup2014matches = filter(worldcupmatches, Year == "2014")
-worldcup2010matches = filter(worlcupmatches, Year == "2010")
+worldcupmatches2014 = filter(cleaned_worldcupmatches, Year == 2014)
+worldcupmatches2014
+```
 
-worldcup2014matches
+```{r}
+startingdate = min(worldcupmatches2014$Datetime)
+spyafterworldcup = filter(spydata,  date >= startingdate)
+out <-spyafterworldcup[order(spyafterworldcup$date),]
+out
+```
 
+```{r}
+#Clean SpyData Per Game
+getSpyDatawithinRangeofGame = function(spydata,game_date,range){
+  rangeInSeconds = 60 * 60 * range
+  return(filter(spydata, (date >= game_date - rangeInSeconds) & (date <= game_date + rangeInSeconds)))
+}
+```
+
+```{r}
+#Clean Spydata Per Worldcup Returns a set of spydata with their corresponding game data
+getSpyDatawithinWorldcup = function(worldcup, spydata, range){
+  z = getSpyDatawithinRangeofGame(spydata, worldcup[[1,"Datetime"]], range)
+  gamerow = worldcup[1,]
+  for(colIndx in 1: ncol(gamerow)){
+      colvalue = worldcup[[1, colIndx]]
+      colname = colnames(worldcup)[colIndx]
+      z[colname] = rep(colvalue, times= nrow(z))
+   }
+  
+  for(gameIndx in 2:nrow(worldcup)){
+   x = getSpyDatawithinRangeofGame(spydata, worldcup[[gameIndx,"Datetime"]], range)
+   gamerow = worldcup[gameIndx,]
+   for(colIndx in 1: ncol(gamerow)){
+      colvalue = worldcup[[gameIndx, colIndx]]
+      colname = colnames(worldcup)[colIndx]
+      x[colname] = rep(colvalue, times= nrow(x))
+   }
+   z = union_all(z,x)
+  }
+  return(z)
+}
+```
+
+```{r}
+getSpyDatawithinWorldcup(worldcupmatches2014, spydata, 3)
+```
+
+```{r}
+getSpyDatawithinRangeofGame(spydata, worldcupmatches2014$Datetime[6], 3)
 ```
