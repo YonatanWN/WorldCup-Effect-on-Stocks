@@ -70,8 +70,8 @@ getSpyAndGameDataWithinWorldcup = function(worldcup, spydata, range){
       colvalue = worldcup[[1, colIndx]]
       colname = colnames(worldcup)[colIndx]
       z[colname] = rep(colvalue, times= nrow(z))
-   }
-  
+  }
+  z["Time_From_Game"] = (z$date - worldcup[[1,"Datetime"]])
   for(gameIndx in 2:nrow(worldcup)){
    x = getSpyDataWithinRangeofGame(spydata, worldcup[[gameIndx,"Datetime"]], range)
    gamerow = worldcup[gameIndx,]
@@ -80,6 +80,7 @@ getSpyAndGameDataWithinWorldcup = function(worldcup, spydata, range){
       colname = colnames(worldcup)[colIndx]
       x[colname] = rep(colvalue, times= nrow(x))
    }
+   x["Time_From_Game"] = (x$date - x$Datetime)
    z = union_all(z,x)
   }
   return(z)
@@ -87,6 +88,7 @@ getSpyAndGameDataWithinWorldcup = function(worldcup, spydata, range){
 ```
 
 ```{r}
+#Gives Spydata and Difference from the game time for each worldcup game
 getSpyAndGameDataForOneGame = function(spydata,worldcup, game_index, range){
   z = getSpyDataWithinRangeofGame(spydata, worldcup[[game_index,"Datetime"]], range)
   for(colIndx in 1: ncol(worldcup[game_index,])){
@@ -94,17 +96,17 @@ getSpyAndGameDataForOneGame = function(spydata,worldcup, game_index, range){
       colname = colnames(worldcup)[colIndx]
       z[colname] = rep(colvalue, times= nrow(z))
   }
-  z["Time_From_Game"] = z$date - rep(worldcup[[game_index,"Datetime"]], times = nrow(z))
+  z["Time_From_Game"] = (z$date - rep(worldcup[[game_index,"Datetime"]], times = nrow(z)))
   return(z)
 }
 ```
 
 ```{r}
-getSpyAndGameDataForOneGame(spydata, cleaned_worldcupmatches,2,3)
+getSpyAndGameDataForOneGame(spydata, worldcupmatches2014,2,3)
 ```
 
 ```{r}
-getSpyDatawithinWorldcup(worldcupmatches2014, spydata, 3)
+getSpyAndGameDataWithinWorldcup(worldcupmatches2014, spydata, 3)
 ```
 
 ```{r}
