@@ -87,9 +87,97 @@ getSpyDatawithinWorldcup = function(worldcup, spydata, range){
 ```
 
 ```{r}
-getSpyDatawithinWorldcup(worldcupmatches2014, spydata, 3)
+list <- getSpyDatawithinWorldcup(worldcupmatches2014, spydata, 3)
+list
+game2 <- list[61:960,]
+game2.df <- as_tibble(game2)
+game2.df
 ```
 
 ```{r}
-getSpyDatawithinRangeofGame(spydata, worldcupmatches2014$Datetime[6], 3)
+#getSpyDatawithinRangeofGame(spydata, worldcupmatches2014$Datetime[6], 3)
+```
+
+```{r}
+#get sample of games
+set.seed(100)
+samplegames <- sample()
+```
+
+```{r}
+library(ggplot2)
+volume_hist <- ggplot(data = game2.df) + geom_histogram(mapping = aes(x=volume), color="navy", fill="coral2", binwidth=1) + ggtitle("Game 2 Volume Histogram")
+volume_hist
+```
+
+```{r}
+volumesp <- ggplot(game2.df)
+volumesp <- volumesp+geom_point(mapping = aes(x=date, y=volume), color ="red") + ggtitle("Volume over Time, 2014 Game 2")
+volumesp
+```
+
+```{r}
+pricesp <- ggplot(game2.df)
+pricesp <- pricesp+geom_point(mapping = aes(x=date, y=average), color ="red") + geom_vline(xintercept= worldcupmatches2014$Datetime[2]) + ggtitle("Price over Time, 2014 Game 2")
+pricesp
+```
+
+THIS GAME WAS AT 12:00
+
+```{r}
+library(GGally)
+game2pricedata <- list[61:960,2:7]
+game2pricedata.df <- as_tibble(game2pricedata)
+ggpairs(game2pricedata.df)
+```
+
+```{r}
+regression <- lm(volume~date, game2pricedata.df)
+summary(regression)
+```
+
+```{r}
+#my attempt at candlestick purrrr
+library(tidyquant)
+options("getSymbols.warning4.0"=FALSE)
+options("getSymbols.yahoo.warning"=FALSE)
+#make a function
+candleStick_plot<-function(symbol,from,to){
+  tq_get(symbol,
+        from = from,
+        to = to,
+        warnings = FALSE) %>%     mutate(greenRed=ifelse(open-close>0,
+                           "Red",
+                           "Green")) %>% 
+
+    ggplot()+
+    geom_segment(aes(x = date,
+                     xend=date,
+                     y =open,
+                     yend =close,
+                     colour=greenRed),
+                 size=3)+
+    theme_tq()+
+    geom_segment(aes(x = date,
+                     xend=date,
+                     y =high,
+                     yend =low,
+                     colour=greenRed))+
+    scale_color_manual(values=c("Forest Green","Red"))+
+    ggtitle(paste0(symbol," (",from," - ",to,")"))+
+    theme(legend.position ="none",
+          axis.title.y = element_blank(),
+          axis.title.x=element_blank(),
+          axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+          plot.title= element_text(hjust=0.5))
+}
+
+```
+
+```{r}
+candleStick_plot("SPY",from = '2014-06-12',to = '2014-07-13')
+```
+
+```{r}
+candleStick_plot("AAPL",worldcupmatches2014$Datetime[2] - 60*60*3, worldcupmatches2014$Datetime[2] + 60*60*3)
 ```
