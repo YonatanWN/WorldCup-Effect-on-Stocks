@@ -55,7 +55,7 @@ out
 
 ```{r}
 #Clean SpyData Per Game
-getSpyDatawithinRangeofGame = function(spydata,game_date,range){
+getSpyDataWithinRangeofGame = function(spydata,game_date,range){
   rangeInSeconds = 60 * 60 * range
   return(filter(spydata, (date >= game_date - rangeInSeconds) & (date <= game_date + rangeInSeconds)))
 }
@@ -63,8 +63,8 @@ getSpyDatawithinRangeofGame = function(spydata,game_date,range){
 
 ```{r}
 #Clean Spydata Per Worldcup Returns a set of spydata with their corresponding game data
-getSpyDatawithinWorldcup = function(worldcup, spydata, range){
-  z = getSpyDatawithinRangeofGame(spydata, worldcup[[1,"Datetime"]], range)
+getSpyAndGameDataWithinWorldcup = function(worldcup, spydata, range){
+  z = getSpyDataWithinRangeofGame(spydata, worldcup[[1,"Datetime"]], range)
   gamerow = worldcup[1,]
   for(colIndx in 1: ncol(gamerow)){
       colvalue = worldcup[[1, colIndx]]
@@ -73,7 +73,7 @@ getSpyDatawithinWorldcup = function(worldcup, spydata, range){
    }
   
   for(gameIndx in 2:nrow(worldcup)){
-   x = getSpyDatawithinRangeofGame(spydata, worldcup[[gameIndx,"Datetime"]], range)
+   x = getSpyDataWithinRangeofGame(spydata, worldcup[[gameIndx,"Datetime"]], range)
    gamerow = worldcup[gameIndx,]
    for(colIndx in 1: ncol(gamerow)){
       colvalue = worldcup[[gameIndx, colIndx]]
@@ -87,9 +87,26 @@ getSpyDatawithinWorldcup = function(worldcup, spydata, range){
 ```
 
 ```{r}
+getSpyAndGameDataForOneGame = function(spydata,worldcup, game_index, range){
+  z = getSpyDataWithinRangeofGame(spydata, worldcup[[game_index,"Datetime"]], range)
+  for(colIndx in 1: ncol(worldcup[game_index,])){
+      colvalue = worldcup[[game_index, colIndx]]
+      colname = colnames(worldcup)[colIndx]
+      z[colname] = rep(colvalue, times= nrow(z))
+  }
+  z["Time_From_Game"] = z$date - rep(worldcup[[game_index,"Datetime"]], times = nrow(z))
+  return(z)
+}
+```
+
+```{r}
+getSpyAndGameDataForOneGame(spydata, cleaned_worldcupmatches,2,3)
+```
+
+```{r}
 getSpyDatawithinWorldcup(worldcupmatches2014, spydata, 3)
 ```
 
 ```{r}
-getSpyDatawithinRangeofGame(spydata, worldcupmatches2014$Datetime[6], 3)
+getSpyDatawithinRangeofGame(spydata, worldcupmatches2014$Datetime[3], 3)
 ```
