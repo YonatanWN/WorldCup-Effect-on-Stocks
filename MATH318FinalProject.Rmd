@@ -73,6 +73,7 @@ getSpyAndGameDataWithinWorldcup = function(worldcup, spydata, range){
 #Gives Spydata and Difference from the game time for each worldcup game
 getSpyAndGameDataForOneGame = function(spydata,worldcup, game_index, range){
   z = getSpyDataWithinRangeofGame(spydata, worldcup[[game_index,"Datetime"]], range)
+  print(nrow(z))
   for(colIndx in 1: ncol(worldcup[game_index,])){
       colvalue = worldcup[[game_index, colIndx]]
       colname = colnames(worldcup)[colIndx]
@@ -99,7 +100,7 @@ cleaned_worldcupmatches$Datetime = as.POSIXct(cleaned_worldcupmatches$Datetime, 
 cleaned_worldcupmatches = filter(cleaned_worldcupmatches, wday(as.Date(Datetime)) != 7 & wday(as.Date(Datetime)) != 1)
 
 #Filter Games that have no corresponding Data
-cleaned_worldcupmatches = add_column(cleaned_worldcupmatches,"HasSpyData" = hasSpyDataWithinRangeOfGame(spydata, cleaned_worldcupmatches$Datetime, 5))
+cleaned_worldcupmatches = add_column(cleaned_worldcupmatches,"HasSpyData" = hasSpyDataWithinRangeOfGame(spydata, cleaned_worldcupmatches$Datetime, 3))
 cleaned_worldcupmatches = filter(cleaned_worldcupmatches, cleaned_worldcupmatches$HasSpyData == TRUE)
 ```
 
@@ -110,14 +111,17 @@ cleaned_worldcupmatches
 # Sample Games from a World Cup
 
 ```{r}
+set.seed(100)
 samplesize = 10
 worldcupmatches2014 = filter(cleaned_worldcupmatches, Year == 2014)
 sampleworldcupgames = sample_n(worldcupmatches2014,size = samplesize)
+
+print(worldcupmatches2014)
 print(sampleworldcupgames)
 ```
 
 ```{r}
-getSpyAndGameDataForOneGame(spydata, sampleworldcupgames, 1, 3)
+getSpyAndGameDataForOneGame(spydata, sampleworldcupgames, 4, 3)
 ```
 
 ```{r}
