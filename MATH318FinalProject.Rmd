@@ -17,7 +17,6 @@ library(stringr)
 
 ```{r}
 spydata = as_tibble(read.csv("1_min_SPY_2008-2021.csv"))
-
 ```
 
 ```{r}
