@@ -3,9 +3,7 @@ title: "MATH 318 Final Project"
 output: html_notebook
 ---
 
-# MATH 318 Final Project
-
-# Effect of World Cup on Stock Price and Trading Activity
+# MATH 318 Final Project: The Effect of World Cup on Stock Price and Trading Activity
 
 ```{r}
 library(tidyverse)
@@ -15,47 +13,31 @@ library(lubridate)
 library(stringr)
 ```
 
+# Load Data
+
 ```{r}
 spydata = as_tibble(read.csv("1_min_SPY_2008-2021.csv"))
-
 ```
 
 ```{r}
 worldcupmatches = as_tibble(read.csv("WorldCupMatches.csv"))
 ```
 
-```{r}
-spydata
-```
+# Helper Functions
 
 ```{r}
-spydata$date = as.POSIXct(spydata$date, format="%Y%m%d %H:%M:%S")
-spydata
-```
-
-```{r}
-#Remove Rows containing NA's
-cleaned_worldcupmatches = unique(worldcupmatches[!apply(is.na(worldcupmatches) | worldcupmatches == "", 1, all),])
-#Convert Date and Time into POSIX EDT 
-cleaned_worldcupmatches$Datetime = as.POSIXct(cleaned_worldcupmatches$Datetime, format = "%e %b %Y - %R") - 60* 60
-cleaned_worldcupmatches
-```
-
-```{r}
-worldcupmatches2014 = filter(cleaned_worldcupmatches, Year == 2014)
-worldcupmatches2014
-```
-
-```{r}
-startingdate = min(worldcupmatches2014$Datetime)
-spyafterworldcup = filter(spydata,  date >= startingdate)
-out <-spyafterworldcup[order(spyafterworldcup$date),]
-out
+hasSpyDataWithinRangeOfGame = function(spydata, game_dates, range){
+  list = c()
+  for(game_date in 1:length(game_dates)){
+    list = append(list, nrow(getSpyDataWithinRangeofGame(spydata, game_date = game_dates[game_date], range)) != 0)
+  }
+  return(list)
+}
 ```
 
 ```{r}
 #Clean SpyData Per Game
-getSpyDatawithinRangeofGame = function(spydata,game_date,range){
+getSpyDataWithinRangeofGame = function(spydata,game_date,range){
   rangeInSeconds = 60 * 60 * range
   return(filter(spydata, (date >= game_date - rangeInSeconds) & (date <= game_date + rangeInSeconds)))
 }
@@ -63,23 +45,24 @@ getSpyDatawithinRangeofGame = function(spydata,game_date,range){
 
 ```{r}
 #Clean Spydata Per Worldcup Returns a set of spydata with their corresponding game data
-getSpyDatawithinWorldcup = function(worldcup, spydata, range){
-  z = getSpyDatawithinRangeofGame(spydata, worldcup[[1,"Datetime"]], range)
+getSpyAndGameDataWithinWorldcup = function(worldcup, spydata, range){
+  z = getSpyDataWithinRangeofGame(spydata, worldcup[[1,"Datetime"]], range)
   gamerow = worldcup[1,]
   for(colIndx in 1: ncol(gamerow)){
       colvalue = worldcup[[1, colIndx]]
       colname = colnames(worldcup)[colIndx]
       z[colname] = rep(colvalue, times= nrow(z))
-   }
-  
+  }
+  z["Time_From_Game"] = (z$date - worldcup[[1,"Datetime"]])
   for(gameIndx in 2:nrow(worldcup)){
-   x = getSpyDatawithinRangeofGame(spydata, worldcup[[gameIndx,"Datetime"]], range)
+   x = getSpyDataWithinRangeofGame(spydata, worldcup[[gameIndx,"Datetime"]], range)
    gamerow = worldcup[gameIndx,]
    for(colIndx in 1: ncol(gamerow)){
       colvalue = worldcup[[gameIndx, colIndx]]
       colname = colnames(worldcup)[colIndx]
       x[colname] = rep(colvalue, times= nrow(x))
    }
+   x["Time_From_Game"] = (x$date - x$Datetime)
    z = union_all(z,x)
   }
   return(z)
@@ -87,9 +70,63 @@ getSpyDatawithinWorldcup = function(worldcup, spydata, range){
 ```
 
 ```{r}
-getSpyDatawithinWorldcup(worldcupmatches2014, spydata, 3)
+#Gives Spydata and Difference from the game time for each worldcup game
+getSpyAndGameDataForOneGame = function(spydata,worldcup, game_index, range){
+  z = getSpyDataWithinRangeofGame(spydata, worldcup[[game_index,"Datetime"]], range)
+  print(nrow(z))
+  for(colIndx in 1: ncol(worldcup[game_index,])){
+      colvalue = worldcup[[game_index, colIndx]]
+      colname = colnames(worldcup)[colIndx]
+      z[colname] = rep(colvalue, times= nrow(z))
+  }
+  z["Time_From_Game"] = (z$date - rep(worldcup[[game_index,"Datetime"]], times = nrow(z)))
+  return(z)
+}
+```
+
+# Cleaning Data
+
+```{r}
+#Update 
+spydata$date = as.POSIXct(spydata$date, format="%Y%m%d %H:%M:%S")
+
+#Remove Rows containing NA's
+cleaned_worldcupmatches = unique(worldcupmatches[!apply(is.na(worldcupmatches) | worldcupmatches == "", 1, all),])
+
+#Convert Date and Time into POSIX EDT 
+cleaned_worldcupmatches$Datetime = as.POSIXct(cleaned_worldcupmatches$Datetime, format = "%e %b %Y - %R") - 60 * 60
+
+#Filter Games on the Weekend
+cleaned_worldcupmatches = filter(cleaned_worldcupmatches, wday(as.Date(Datetime)) != 7 & wday(as.Date(Datetime)) != 1)
+
+#Filter Games that have no corresponding Data
+cleaned_worldcupmatches = add_column(cleaned_worldcupmatches,"HasSpyData" = hasSpyDataWithinRangeOfGame(spydata, cleaned_worldcupmatches$Datetime, 3))
+cleaned_worldcupmatches = filter(cleaned_worldcupmatches, cleaned_worldcupmatches$HasSpyData == TRUE)
 ```
 
 ```{r}
-getSpyDatawithinRangeofGame(spydata, worldcupmatches2014$Datetime[6], 3)
+cleaned_worldcupmatches
+```
+
+# Sample Games from a World Cup
+
+```{r}
+set.seed(100) 
+samplesize = 10
+worldcupmatches2014 = filter(cleaned_worldcupmatches, Year == 2014)
+sampleworldcupgames = sample_n(worldcupmatches2014,size = samplesize)
+
+print(worldcupmatches2014)
+print(sampleworldcupgames)
+```
+
+```{r}
+getSpyAndGameDataForOneGame(spydata, sampleworldcupgames, 4, 3)
+```
+
+```{r}
+
+for(rowIndx in 1:samplesize){
+  print(getSpyAndGameDataForOneGame(spydata, sampleworldcupgames, rowIndx, 3))
+}
 ```
