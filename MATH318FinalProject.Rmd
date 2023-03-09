@@ -111,7 +111,7 @@ cleaned_worldcupmatches
 # Sample Games from a World Cup
 
 ```{r}
-set.seed(100)
+set.seed(100) 
 samplesize = 10
 worldcupmatches2014 = filter(cleaned_worldcupmatches, Year == 2014)
 sampleworldcupgames = sample_n(worldcupmatches2014,size = samplesize)
