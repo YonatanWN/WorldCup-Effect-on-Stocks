@@ -121,12 +121,116 @@ print(sampleworldcupgames)
 ```
 
 ```{r}
-getSpyAndGameDataForOneGame(spydata, sampleworldcupgames, 4, 3)
+list <- list()
+for(rowIndx in 1:samplesize){
+  x= getSpyAndGameDataForOneGame(spydata, sampleworldcupgames, rowIndx, 3)
+  list = append(list, x)
+}
+list
 ```
 
 ```{r}
-
-for(rowIndx in 1:samplesize){
-  print(getSpyAndGameDataForOneGame(spydata, sampleworldcupgames, rowIndx, 3))
+for(i in 1:length(list)){
+  plot <- ggplot(as_tibble(list[i])) +  geom_point(mapping = aes(x=date, y=volume), color ="red")
+  print(plot)
 }
+```
+
+```{r}
+game1 <- getSpyAndGameDataForOneGame(spydata, sampleworldcupgames, 1, 3)
+volumesp1 <- ggplot(game1) + geom_point(mapping = aes(x=date, y=volume), color ="red") + geom_vline(xintercept= sampleworldcupgames$Datetime[1]) + ggtitle("Volume over Time, Sample Game 1")
+volumesp1
+```
+
+```{r}
+game2 <- getSpyAndGameDataForOneGame(spydata, sampleworldcupgames, 2, 3)
+volumesp2 <- ggplot(game2) + geom_point(mapping = aes(x=date, y=volume), color ="red") + geom_vline(xintercept= sampleworldcupgames$Datetime[2])+ ggtitle("Volume over Time, Sample Game 2")
+volumesp2
+#ERROR AGAIN WE DONT HAVE FULL DATA FOR THIS GAME
+```
+
+```{r}
+game3 <- getSpyAndGameDataForOneGame(spydata, sampleworldcupgames, 3, 3)
+volumesp3 <- ggplot(game3) + geom_point(mapping = aes(x=date, y=volume), color ="red") + geom_vline(xintercept= sampleworldcupgames$Datetime[3])+ ggtitle("Volume over Time, Sample Game 3")
+volumesp3
+```
+
+```{r}
+game4 <- getSpyAndGameDataForOneGame(spydata, sampleworldcupgames, 4, 3)
+volumesp4 <- ggplot(game4) + geom_point(mapping = aes(x=date, y=volume), color ="red") + geom_vline(xintercept= sampleworldcupgames$Datetime[4])+ ggtitle("Volume over Time, Sample Game 4")
+volumesp4
+```
+
+```{r}
+game5 <- getSpyAndGameDataForOneGame(spydata, sampleworldcupgames, 5, 3)
+volumesp5 <- ggplot(game5) + geom_point(mapping = aes(x=date, y=volume), color ="red") + geom_vline(xintercept= sampleworldcupgames$Datetime[5])+ ggtitle("Volume over Time, Sample Game 5")
+volumesp5
+```
+
+## Price Scatter Plots
+
+Using average price
+
+```{r}
+pricesp1 <- ggplot(game1) + geom_point(mapping = aes(x=date, y=average), color ="red") + geom_vline(xintercept= sampleworldcupgames$Datetime[1])+ ggtitle("Price over Time, Sample Game 1")
+pricesp1
+```
+
+```{r}
+pricesp2 <- ggplot(game2) + geom_point(mapping = aes(x=date, y=average), color ="red") + geom_vline(xintercept= sampleworldcupgames$Datetime[2])+ ggtitle("Price over Time, Sample Game 2")
+pricesp2
+#ISSUE BECAUSE WE DONT HAVE DATA FOR 16:00 and that is time of the game
+```
+
+```{r}
+pricesp3 <- ggplot(game3) + geom_point(mapping = aes(x=date, y=average), color ="red") + geom_vline(xintercept= sampleworldcupgames$Datetime[3])+ ggtitle("Price over Time, Sample Game 3")
+pricesp3
+```
+
+```{r}
+pricesp4 <- ggplot(game4) + geom_point(mapping = aes(x=date, y=average), color ="red") + geom_vline(xintercept= sampleworldcupgames$Datetime[4])+ ggtitle("Price over Time, Sample Game 4")
+pricesp4
+```
+
+```{r}
+pricesp5 <- ggplot(game5) + geom_point(mapping = aes(x=date, y=average), color ="red") + geom_vline(xintercept= sampleworldcupgames$Datetime[5])+ ggtitle("Price over Time, Sample Game 5")
+pricesp5
+```
+
+## Just USA Games
+
+```{r}
+worldcupmatchesUSAhome = filter(cleaned_worldcupmatches, Home.Team.Name == "USA")
+worldcupmatchesUSAaway = filter(cleaned_worldcupmatches, Away.Team.Name == "USA")
+worldcupmatchesUSA <- union_all(worldcupmatchesUSAaway,worldcupmatchesUSAhome)
+worldcupmatchesUSA
+```
+
+```{r}
+game1USA <- getSpyAndGameDataForOneGame(spydata, worldcupmatchesUSA, 1, 3)
+volumesp1USA <- ggplot(game1USA) + geom_point(mapping = aes(x=date, y=volume), color ="red") + geom_vline(xintercept= worldcupmatchesUSA$Datetime[1])+ ggtitle("Volume over Time, USA Game 1, 2010")
+volumesp1USA
+```
+
+```{r}
+game2USA <- getSpyAndGameDataForOneGame(spydata, worldcupmatchesUSA, 2, 3)
+volumesp2USA <- ggplot(game2USA) + geom_point(mapping = aes(x=date, y=volume), color ="red") + geom_vline(xintercept= worldcupmatchesUSA$Datetime[2])+ ggtitle("Volume over Time, USA Game 2, 2014")
+volumesp2USA
+```
+
+```{r}
+game3USA <- getSpyAndGameDataForOneGame(spydata, worldcupmatchesUSA, 3, 3)
+volumesp3USA <- ggplot(game3USA) + geom_point(mapping = aes(x=date, y=volume), color ="red") + geom_vline(xintercept= worldcupmatchesUSA$Datetime[3])+ ggtitle("Volume over Time, USA Game 2, 2010")
+volumesp3USA
+```
+
+```{r}
+game4USA <- getSpyAndGameDataForOneGame(spydata, worldcupmatchesUSA, 4, 3)
+volumesp4USA <- ggplot(game4USA) + geom_point(mapping = aes(x=date, y=volume), color ="red") + geom_vline(xintercept= worldcupmatchesUSA$Datetime[4])+ ggtitle("Volume over Time, USA Game 1, 2014")
+volumesp4USA
+```
+
+```{r}
+pricesp4USA <- ggplot(game4USA) + geom_point(mapping = aes(x=date, y=average), color ="red") + geom_vline(xintercept= worldcupmatchesUSA$Datetime[4])+ ggtitle("Price over Time, USA Game 1, 2014")
+pricesp4USA
 ```
