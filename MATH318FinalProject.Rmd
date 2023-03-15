@@ -244,14 +244,29 @@ difference
 ```
 
 ```{r}
-list = list()
+price_list = list()
+time_list = list()
 for (game in 1:nrow(cleaned_worldcupmatches)) {
-  x <- getSpyAndGameDataForOneGame(spydata, cleaned_worldcupmatches, game, 3)
-  highestpriceforgame <- max(x$high)
+  price_game_data <- getSpyAndGameDataForOneGame(spydata, cleaned_worldcupmatches, game, 3)
+  highestpriceforgame <- max(price_game_data$average)
   normalize = (highestpriceforgame - overall.min)/(difference)
-  time <- x$"Time_From_Game"
-  list = append(list, normalize)
+  time <- price_game_data$"Time_From_Game"
+  time <- as.integer(time)
+  price_list = append(price_list, normalize)
+  time_list = append(time_list, time)
 }
-list
-#highestprice <- max(cleaned_worldcupmatches$average)
+price_list
+time_list
+```
+
+```{r}
+#if we had a list of prices from the function above 
+normalized_price_column <- c(price_list[1:59])
+time_from_game_column <- c(time_list[1:59])
+optimal_selling.df <- data.frame("Normalized Price" = normalized_price_column, "Time From Game" = time_from_game_column)
+```
+
+```{r}
+optimal_selling_sp <- ggplot(optimal_selling.df) + geom_point(mapping = aes(x= time_from_game_column, y= normalized_price_column), color ="red") + ggtitle("Optimal Selling Price vs. Time From Game")
+optimal_selling_sp
 ```
