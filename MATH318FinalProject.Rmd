@@ -26,20 +26,20 @@ worldcupmatches = as_tibble(read.csv("WorldCupMatches.csv"))
 # Helper Functions
 
 ```{r}
+#Clean SpyData Per Game
+getSpyDataWithinRangeofGame = function(spydata,game_date,range){
+  rangeInSeconds = 60 * 60 * range
+  return(filter(spydata, (date >= game_date - rangeInSeconds) & (date <= game_date + rangeInSeconds)))
+}
+```
+
+```{r}
 hasSpyDataWithinRangeOfGame = function(spydata, game_dates, range){
   list = c()
   for(game_date in 1:length(game_dates)){
     list = append(list, nrow(getSpyDataWithinRangeofGame(spydata, game_date = game_dates[game_date], range)) != 0)
   }
   return(list)
-}
-```
-
-```{r}
-#Clean SpyData Per Game
-getSpyDataWithinRangeofGame = function(spydata,game_date,range){
-  rangeInSeconds = 60 * 60 * range
-  return(filter(spydata, (date >= game_date - rangeInSeconds) & (date <= game_date + rangeInSeconds)))
 }
 ```
 
@@ -177,7 +177,7 @@ pricesp4
 ```
 
 ```{r}
-pricesp5 <- ggplot(game5) + geom_point(mapping = aes(x=date, y=average), color ="red") + geom_vline(xintercept= sampleworldcupgames$Datetime[5])+ ggtitle("Price over Time, Sample Game 5")
+pricesp5 <- ggplot(game5, aes(date)) + geom_point(aes(y=average, ), color ="red") + geom_vline(xintercept= sampleworldcupgames$Datetime[5])+ ggtitle("Price over Time, Sample Game 5") + geom_col(aes(y=(volume))) + scale_y_continuous(sec.axis = sec_axis(~./100, name = "average"))
 pricesp5
 ```
 
@@ -243,9 +243,6 @@ for (game in 1:nrow(cleaned_worldcupmatches)) {
 ```
 
 ```{r}
-#if we had a list of prices from the function above 
-#normalized_price_column <- c(price_list[1:59])
-#time_from_game_column <- c(time_list[1:59])
 optimal_selling.df <- data.frame("price" = price_list, "time" = time_list)
 optimal_selling.df
 ```
