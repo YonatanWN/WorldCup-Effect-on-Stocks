@@ -11,6 +11,9 @@ library(dplyr)
 library(MASS)
 library(lubridate)
 library(stringr)
+library(GGally)
+library(knitr)
+library(kableExtra)
 ```
 
 # Load Data
@@ -25,6 +28,8 @@ worldcupmatches = as_tibble(read.csv("WorldCupMatches.csv"))
 
 # Helper Functions
 
+## Get Only Spy Data for a specific Game
+
 ```{r}
 #Clean SpyData Per Game
 getSpyDataWithinRangeofGame = function(spydata,game_date,range){
@@ -32,6 +37,8 @@ getSpyDataWithinRangeofGame = function(spydata,game_date,range){
   return(filter(spydata, (date >= game_date - rangeInSeconds) & (date <= game_date + rangeInSeconds)))
 }
 ```
+
+## Check if there is Spy data for a game
 
 ```{r}
 hasSpyDataWithinRangeOfGame = function(spydata, game_dates, range){
@@ -43,6 +50,8 @@ hasSpyDataWithinRangeOfGame = function(spydata, game_dates, range){
 }
 ```
 
+## Get Spy Data combined with Game Data for a set of Games
+
 ```{r}
 #Clean Spydata Per Worldcup Returns a set of spydata with their corresponding game data
 getSpyAndGameDataWithinWorldcup = function(worldcup, spydata, range){
@@ -53,7 +62,7 @@ getSpyAndGameDataWithinWorldcup = function(worldcup, spydata, range){
       colname = colnames(worldcup)[colIndx]
       z[colname] = rep(colvalue, times= nrow(z))
   }
-  z["Time_From_Game"] = as.numeric(difftime(z$date, worldcup[[1,"Datetime"]],units = "secs"))
+  z["time.from.game"] = as.numeric(difftime(z$date, worldcup[[1,"Datetime"]],units = "secs"))
   for(gameIndx in 2:nrow(worldcup)){
    x = getSpyDataWithinRangeofGame(spydata, worldcup[[gameIndx,"Datetime"]], range)
    gamerow = worldcup[gameIndx,]
@@ -62,13 +71,15 @@ getSpyAndGameDataWithinWorldcup = function(worldcup, spydata, range){
       colname = colnames(worldcup)[colIndx]
       x[colname] = rep(colvalue, times= nrow(x))
    }
-   x["Time_From_Game"] = as.numeric(difftime(x$date, x$Datetime, units = "secs"))
+   x["time.from.game"] = as.numeric(difftime(x$date, x$Datetime, units = "secs"))
   
    z = union_all(z,x)
   }
   return(z)
 }
 ```
+
+## Get Spy Data combined with Game Data for a single game
 
 ```{r}
 #Gives Spydata and Difference from the game time for each worldcup game
@@ -79,7 +90,7 @@ getSpyAndGameDataForOneGame = function(spydata,worldcup, game_index, range){
       colname = colnames(worldcup)[colIndx]
       z[colname] = rep(colvalue, times= nrow(z))
   }
-  z["Time_From_Game"] = as.numeric(difftime(z$date, rep(worldcup[[game_index,"Datetime"]], times = nrow(z)), units="secs"))
+  z["time.from.game"] = as.numeric(difftime(z$date, rep(worldcup[[game_index,"Datetime"]], times = nrow(z)), units="secs"))
   return(z)
 }
 ```
@@ -102,10 +113,80 @@ cleaned_worldcupmatches = filter(cleaned_worldcupmatches, wday(as.Date(Datetime)
 #Filter Games that have no corresponding Data
 cleaned_worldcupmatches = add_column(cleaned_worldcupmatches,"HasSpyData" = hasSpyDataWithinRangeOfGame(spydata, cleaned_worldcupmatches$Datetime, 3))
 cleaned_worldcupmatches = filter(cleaned_worldcupmatches, cleaned_worldcupmatches$HasSpyData == TRUE)
+
+cleaned_worldcupmatches
+```
+
+## Get Spy Data
+
+```{r}
+#Get Spy data within 3 hours of the Game For both World cups
+allspydata2014 = getSpyAndGameDataWithinWorldcup(filter(cleaned_worldcupmatches, Year==2014), spydata, 3)
+
+allspydata2010 = getSpyAndGameDataWithinWorldcup(filter(cleaned_worldcupmatches, Year==2010), spydata, 3)
+
+```
+
+## Normalizing the average price
+
+```{r}
+#Normalize the Data so that we can compare fairly the growth of stock price
+max.2014 = max(allspydata2014$average)
+max.2010 = max(allspydata2010$average)
+
+
+min.2014 = min(allspydata2014$average)
+min.2010 = min(allspydata2010$average)
+
+difference.2014 = (max.2014) - (min.2014)
+difference.2010 = (max.2010) - (min.2010)
+normalized2014average = (allspydata2014$average-min.2014)/difference.2014
+normalized2010average = (allspydata2010$average-min.2010)/difference.2010
+
+
+allspydata2014 = add_column(allspydata2014, "normalized.average" = normalized2014average)
+allspydata2010 = add_column(allspydata2010, "normalized.average" = normalized2010average)
+
+allspydata = union_all(allspydata2014, allspydata2010)
+
+allspydata
+
+```
+
+## 
+
+# Exploring the Relationship of Time and Volume
+
+Let us explore the Correlation between the Time form game and the Price of the stock
+
+## Correlations
+
+```{r}
+ggpairs(allspydata, columns = c("time.from.game", "average", "volume", "normalized.average"))
 ```
 
 ```{r}
-cleaned_worldcupmatches
+kable(cor(allspydata[, c(7,9,31,32)]))
+```
+
+## Linear Regression
+
+```{r}
+ggplot(allspydata) + geom_point(aes(time.from.game,normalized.average))
+```
+
+```{r}
+ggplot(allspydata) + geom_point(aes(time.from.game,log(volume)))
+```
+
+```{r}
+polymodel = lm(log(volume) ~ poly(time.from.game, 4), data = allspydata)
+polymodel
+```
+
+```{r}
+ggplot(allspydata, aes(time.from.game,log(volume))) + geom_point() + geom_smooth()
+
 ```
 
 # Sample Games from a World Cup
@@ -115,27 +196,26 @@ set.seed(100)
 samplesize = 10
 worldcupmatches2014 = filter(cleaned_worldcupmatches, Year == 2014)
 sampleworldcupgames = sample_n(worldcupmatches2014,size = samplesize)
-
-print(worldcupmatches2014)
-print(sampleworldcupgames)
 ```
+
+After
 
 ```{r}
 game1 <- getSpyAndGameDataForOneGame(spydata, sampleworldcupgames, 1, 3)
-volumesp1 <- ggplot(game1) + geom_point(mapping = aes(x=date, y=volume), color ="red") + geom_vline(xintercept= sampleworldcupgames$Datetime[1]) + ggtitle("Volume over Time, Sample Game 1")
+volumesp1 <- ggplot(game1) + geom_point(mapping = aes(x=date, y=log(volume)), color ="red") + geom_vline(xintercept= sampleworldcupgames$Datetime[1]) + ggtitle("Volume over Time, Sample Game 1")
 volumesp1
 ```
 
 ```{r}
 game2 <- getSpyAndGameDataForOneGame(spydata, sampleworldcupgames, 2, 3)
-volumesp2 <- ggplot(game2) + geom_point(mapping = aes(x=date, y=volume), color ="red") + geom_vline(xintercept= sampleworldcupgames$Datetime[2])+ ggtitle("Volume over Time, Sample Game 2")
+volumesp2 <- ggplot(game2) + geom_point(mapping = aes(x=date, y=log(volume)), color ="red") + geom_vline(xintercept= sampleworldcupgames$Datetime[2])+ ggtitle("Volume over Time, Sample Game 2")
 volumesp2
 #ERROR AGAIN WE DONT HAVE FULL DATA FOR THIS GAME
 ```
 
 ```{r}
 game3 <- getSpyAndGameDataForOneGame(spydata, sampleworldcupgames, 3, 3)
-volumesp3 <- ggplot(game3) + geom_point(mapping = aes(x=date, y=volume), color ="red") + geom_vline(xintercept= sampleworldcupgames$Datetime[3])+ ggtitle("Volume over Time, Sample Game 3")
+volumesp3 <- ggplot(game3) + geom_point(mapping = aes(x=date, y=log(volume)), color ="red") + geom_vline(xintercept= sampleworldcupgames$Datetime[3])+ ggtitle("Volume over Time, Sample Game 3")
 volumesp3
 ```
 
@@ -192,13 +272,13 @@ worldcupmatchesUSA
 
 ```{r}
 game1USA <- getSpyAndGameDataForOneGame(spydata, worldcupmatchesUSA, 1, 3)
-volumesp1USA <- ggplot(game1USA) + geom_point(mapping = aes(x=date, y=volume), color ="red") + geom_vline(xintercept= worldcupmatchesUSA$Datetime[1])+ ggtitle("Volume over Time, USA Game 1, 2010")
+volumesp1USA <- ggplot(game1USA) + geom_point(mapping = aes(x=date, y=log(volume)), color ="red") + geom_vline(xintercept= worldcupmatchesUSA$Datetime[1])+ ggtitle("Volume over Time, USA Game 1, 2010")
 volumesp1USA
 ```
 
 ```{r}
 game2USA <- getSpyAndGameDataForOneGame(spydata, worldcupmatchesUSA, 2, 3)
-volumesp2USA <- ggplot(game2USA) + geom_point(mapping = aes(x=date, y=volume), color ="red") + geom_vline(xintercept= worldcupmatchesUSA$Datetime[2])+ ggtitle("Volume over Time, USA Game 2, 2014")
+volumesp2USA <- ggplot(game2USA) + geom_point(mapping = aes(x=date, y=log(volume)), color ="red") + geom_vline(xintercept= worldcupmatchesUSA$Datetime[2])+ ggtitle("Volume over Time, USA Game 2, 2014")
 volumesp2USA
 ```
 
@@ -219,13 +299,7 @@ pricesp4USA <- ggplot(game4USA) + geom_point(mapping = aes(x=date, y=average), c
 pricesp4USA
 ```
 
-```{r}
-allspydata = getSpyAndGameDataWithinWorldcup(cleaned_worldcupmatches, spydata, 3)
-overall.max = max(allspydata$average)
-overall.min = min(allspydata$average)
-difference = (overall.max) - (overall.min)
-difference
-```
+# What time should you look to sell?
 
 ```{r}
 price_list = c()
@@ -234,10 +308,8 @@ for (game in 1:nrow(cleaned_worldcupmatches)) {
   price_game_data <- getSpyAndGameDataForOneGame(spydata, cleaned_worldcupmatches, game, 3)
   highestdatapoint = price_game_data[which.max(price_game_data$average),]
   highestpriceforgame <- highestdatapoint$average
-  #Change Normalize Formula
-  normalize = (highestpriceforgame - overall.min)/(difference)
-  time <- highestdatapoint$`Time_From_Game`
-  price_list = append(price_list, normalize)
+  time <- highestdatapoint$"time.from.game"
+  price_list = append(price_list, highestpriceforgame)
   time_list = append(time_list, time)
 }
 ```
@@ -247,14 +319,28 @@ optimal_selling.df <- data.frame("price" = price_list, "time" = time_list)
 optimal_selling.df
 ```
 
-```{r}
-optimal_selling_sp <- ggplot(optimal_selling.df) + geom_point(mapping = aes(x= time, y=price), color ="red") + ggtitle("Optimal Selling Price vs. Time From Game")
-optimal_selling_sp
-```
-
 Do THis for Optimal Buying time?
 
 ```{r}
-#DO THIS FOR OPTIMAL TIME TO BUY?
 ggplot(optimal_selling.df) + geom_histogram(mapping = aes(x= time)) + ggtitle("How Often Best Selling Time is vs. Time From Game")
+```
+
+# What time should you look to buy?
+
+```{r}
+price_list = c()
+time_list = c()
+for (game in 1:nrow(cleaned_worldcupmatches)) {
+  price_game_data <- getSpyAndGameDataForOneGame(spydata, cleaned_worldcupmatches, game, 3)
+  lowestdatapoint = price_game_data[which.min(price_game_data$average),]
+  lowestpriceforgame <- lowestdatapoint$average
+  time <- lowestdatapoint$"time.from.game"
+  price_list = append(price_list, lowestpriceforgame)
+  time_list = append(time_list, time)
+}
+```
+
+```{r}
+optimal_buying.df <- data.frame("price" = price_list, "time" = time_list)
+ggplot(optimal_buying.df) + geom_histogram(mapping = aes(x= time)) + ggtitle("How Often Best Buying Time is vs. Time From Game")
 ```
