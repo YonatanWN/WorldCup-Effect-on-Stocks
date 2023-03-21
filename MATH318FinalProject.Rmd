@@ -176,15 +176,6 @@ ggplot(allspydata) + geom_point(aes(time.from.game,normalized.average))
 ```
 
 ```{r}
-ggplot(allspydata) + geom_point(aes(time.from.game,log(volume)))
-```
-
-```{r}
-polymodel = lm(log(volume) ~ poly(time.from.game, 4), data = allspydata)
-polymodel
-```
-
-```{r}
 ggplot(allspydata, aes(time.from.game,log(volume))) + geom_point() + geom_smooth()
 
 ```
