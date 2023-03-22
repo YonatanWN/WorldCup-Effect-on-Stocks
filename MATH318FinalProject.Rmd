@@ -176,7 +176,7 @@ ggplot(allspydata) + geom_point(aes(time.from.game,normalized.average))
 ```
 
 ```{r}
-ggplot(allspydata, aes(time.from.game,log(volume))) + geom_point() + geom_smooth()
+ggplot(allspydata, aes(time.from.game,log(volume))) + geom_point() + geom_smooth() + geom_vline(xintercept= 0, color = "red") + geom_vline(xintercept = 5400, color ="red")
 
 ```
 
@@ -341,7 +341,11 @@ ggplot(optimal_buying.df) + geom_histogram(mapping = aes(x= time)) + ggtitle("Ho
 # Does the importance of the game matter in the total amount of trades?
 
 ```{r}
-#Translate Round ID
+#Box Plot for Trades
+ggplot(allspydata, aes(log(volume), Stage, fill = Stage)) + geom_boxplot() + ggtitle("Log(Volume) vs. Stage Of Game and Groups")
+```
 
-ggplot(allspydata, aes(volume, Stage)) + geom_boxplot()
+```{r}
+allspydata$Stage[grepl("Group", allspydata$Stage, fixed = TRUE)]  = "Group"
+ggplot(allspydata, aes(log(volume), Stage, fill = Stage)) + geom_boxplot() + ggtitle("Log(Volume) vs. Stage Of Game")
 ```
