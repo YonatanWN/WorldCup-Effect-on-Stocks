@@ -14,6 +14,52 @@ library(stringr)
 library(GGally)
 library(knitr)
 library(kableExtra)
+library(tidyquant)
+```
+
+# Introduction
+
+Our goal in this project was to explore the effect the FIFA World Cup has on the stock market. In researching to prepare, we found that the World Cup has a generally negative impact on the market. According to an article from MarketWatch, a country\'s average market return significantly drops after their team is eliminated from the Cup. The inverse can\'t be said for team wins, which leads to the overall market decreasing. Our interest was to investigate the market trends, specifically regarding the S&P 500, in relation to the times of World Cup games. 
+
+## Exploration
+
+```{r}
+candleStick_plot<-function(symbol,from,to){
+  tq_get(symbol,
+        from = from,
+        to = to,
+        warnings = FALSE) %>% mutate(greenRed=ifelse(open-close>0,
+                           "Red",
+                           "Green")) %>%
+    ggplot()+
+    geom_segment(aes(x = date,
+                     xend=date,
+                     y =open,
+                     yend =close,
+                     colour=greenRed),
+                 size=3)+
+    theme_tq()+
+    geom_segment(aes(x = date,
+                     xend=date,
+                     y =high,
+                     yend =low,
+                     colour=greenRed))+
+    scale_color_manual(values=c("Forest Green","Red"))+
+    ggtitle(paste0(symbol," (",from," - ",to,")"))+
+    theme(legend.position ="none",
+          axis.title.y = element_blank(),
+          axis.title.x=element_blank(),
+          axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+          plot.title= element_text(hjust=0.5))
+}
+
+```
+
+```{r}
+candleStick_plot("SPY", from = '2002-05-31', to = '2002-06-30')
+candleStick_plot("SPY", from = '2006-06-09', to = '2006-07-09')
+candleStick_plot("SPY", from = '2010-06-11',to = '2010-07-11')
+candleStick_plot("SPY", from = '2014-06-12',to = '2014-07-13')
 ```
 
 # Load Data
@@ -26,9 +72,14 @@ spydata = as_tibble(read.csv("1_min_SPY_2008-2021.csv"))
 worldcupmatches = as_tibble(read.csv("WorldCupMatches.csv"))
 ```
 
+We were interested in looking at the general price of the market during the world cup, to confirm if our data shows the proposed trend of decreased price during the World Cup  we found in our research. To do this we used a graphing method called candlesticks plots. These plots show the average and variation of the price over a given month. Each plot spanned the month of the World Cup for the years 2002, 2006, 2010, 2014. Both the graph for 2002 and 2010 display a generally decreasing trend throughout the month. However, the 2006 and 2014 graphs instead show a general increase in price over time. To better understand trends in the data, we then looked closer at information from singular games. 
+
+\
+\
+
 # Helper Functions
 
-## Get Only Spy Data for a specific Game
+## Get Only Spy Data for a Specific Game
 
 ```{r}
 #Clean SpyData Per Game
@@ -150,10 +201,9 @@ allspydata2010 = add_column(allspydata2010, "normalized.average" = normalized201
 allspydata = union_all(allspydata2014, allspydata2010)
 
 allspydata
-
 ```
 
-## 
+Before we could perform any tests on the data sets, we first had to take into account the stock price differences between the years 2010 and 2014. In order to normalize the stock price data, we had to split the data into each year and normalize the prices within that year. The method we chose to normalize the prices was subtracting the minimum price for that year from each price. This value was then divided by the difference between the maximum and minimum price for that year. Each normalized price is a value between zero and one. When interpreting these values, the closer the normalized value is to one, the closer the price is to the maximum for that year. Similarly, the closer the value is to zero, the closer the price is to the minimum for that year. By normalizing the prices for each year, we created an even playing field for price data, as they are all relative to the stock market climate in their given year.
 
 # Exploring the Relationship of Time and Volume
 
@@ -169,6 +219,8 @@ ggpairs(allspydata, columns = c("time.from.game", "average", "volume", "normaliz
 kable(cor(allspydata[, c(7,9,31,32)]))
 ```
 
+After cleaning the data set, we computed the cross-correlations for the variables: time from the game, volume of trades, average price, and normalized average price. We were most interested in seeing how time from game affected volume of trades since volume shows stock productivity. We found that time from game had the highest correlation with average price, the correlation was 0.215. We also found that the correlation between time from game and volume was .033. These low values make sense given the data we had access to. We did not have data for commonly traded stocks by day traders. Nevertheless, we wanted to regress with volume as the dependent variable and time from game as the independent variable. After attempting multiple regression types, nonlinear regression gave us the best fit. 
+
 ## Linear Regression
 
 ```{r}
@@ -179,6 +231,11 @@ ggplot(allspydata) + geom_point(aes(time.from.game,normalized.average))
 ggplot(allspydata, aes(time.from.game,log(volume))) + geom_point() + geom_smooth() + geom_vline(xintercept= 0, color = "red") + geom_vline(xintercept = 5400, color ="red")
 
 ```
+
+The model we used for nonlinear regression is a Generalized Additive Model, also known as a GAM. A GAM is made up of splines, splines are smooth polynomial functions that cover a small range. These splines replace the beta coefficients that we normally see in linear regression, so that we can regress on nonlinear data. When we graph our nonlinear model over the volume data, we see that there is a spike in volume of trades 5000 seconds before the time of the game, which is about an hour and a half before the game. After this spike, there is a gradual increase once the game starts and the positive trend continues as the game finishes.
+
+\
+\
 
 # Sample Games from a World Cup
 
@@ -249,6 +306,11 @@ pricesp4
 pricesp5 <- ggplot(game5, aes(date)) + geom_point(aes(y=average, ), color ="red") + geom_vline(xintercept= sampleworldcupgames$Datetime[5])+ ggtitle("Price over Time, Sample Game 5")
 pricesp5
 ```
+
+We next looked at the volume of trading over a range of time from five sample games. Using ggpoint, we plotted the scatter plot of the market volume over a period of a few hours before and after the start of the game, and we indicated the start time with a vertical line on the graph. The values for volume are very large and varied, which makes the graphs difficult to read. To make them more digestible, we instead used the log of volume as the dependent variable, giving us smaller numbers. We found that, in general, there is a slight dip in the volume around the start time of the game. This agrees with findings from our research that stock market activity drops durring the World Cup as more attention is directed towards the games. We also used scatter plots to look at the average price of stocks over a range of time around the start time of sample games. As for the volume plots, we indicated the start time of the game with a vertical line on the graph. The figures show that the average price tends to drop just before the start of the game, and then increase. These trends in price lead us to explore the times it would be best to both buy and sell stocks.
+
+\
+\
 
 ## Just USA Games
 
@@ -336,6 +398,11 @@ optimal_buying.df <- data.frame("price" = price_list, "time" = time_list)
 ggplot(optimal_buying.df) + geom_histogram(mapping = aes(x= time)) + ggtitle("How Often Best Buying Time is vs. Time From Game")
 ```
 
+Another idea we wanted to explore was the optimal buying and selling times for SPY. The optimal buying time would be when the SPY price is the lowest and the optimal selling time would be when the SPY price is the highest. In order to find the optimal times from the game, we found the maximum and minimum price of SPY during each game. From there, we found the corresponding time from game for these maximum and minimum price values. With this data, we created two histograms: one that demonstrates the optimal buying times from a world cup game and another that demonstrated the optimal selling times from a world cup game. The histograms display the time from game on the x-axis and show the amount of hames that have their optimal selling or buying time at that time value. For the optimal selling histogram, there are peaks at 10,000 seconds and 5,000 seconds before the game. These two time values correspond to around three hours before the game and one and a half hours before the game, respectively. There were other outliers in the histogram, but these two values seem to be the best times around a world cup game to sell SPY stock, based on our data. For the optimal buying histogram, there was a large peak around 10,000 seconds before the game, which is three hours before the game. The histogram is skewed right, so the times where the SPY price was the lowest was before the game. From this histogram, it appears that the best time to buy SPY stock is three hours before the start of a world cup game. 
+
+\
+\
+
 # Does the importance of the game matter in the total amount of trades?
 
 ```{r}
@@ -347,3 +414,5 @@ ggplot(allspydata, aes(log(volume), Stage, fill = Stage)) + geom_boxplot() + ggt
 allspydata$Stage[grepl("Group", allspydata$Stage, fixed = TRUE)]  = "Group"
 ggplot(allspydata, aes(log(volume), Stage, fill = Stage)) + geom_boxplot() + ggtitle("Log(Volume) vs. Stage Of Game")
 ```
+
+Finally we wanted to explore the relative importance of games and its relationship to productivity. To look at this relationship we compared the stage of the world cup the games occurred (Group stages, vs. Knockout Stages) with boxplot of the volume. Because the final always occurs only on the weekend we can only compare Group Stages and the different groups, Round of 16, Quarterfinals and Semifinals. The difference in mean and variance between these stages is fairly minimal however, we are working with log(volume) so even some minor difference translates to some larger difference in actual volume. Our expectation was to find a significant drop dependent on the importance of the game, with later knockout stages. However we found that most stages, particularly Group Stages, Round of 16, and Semifinals are fairly equivalent. Interestingly, quarterfinals had on average a higher volume, perhaps showing people have lesser interest during these games, especially since many of the countries one might support would have been eliminated. While the later stages contain the best teams that everyone would like to watch.
