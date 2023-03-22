@@ -290,6 +290,8 @@ pricesp4USA <- ggplot(game4USA) + geom_point(mapping = aes(x=date, y=average), c
 pricesp4USA
 ```
 
+# Is there a way to make money during World Cup Games?
+
 # What time should you look to sell?
 
 ```{r}
@@ -334,4 +336,12 @@ for (game in 1:nrow(cleaned_worldcupmatches)) {
 ```{r}
 optimal_buying.df <- data.frame("price" = price_list, "time" = time_list)
 ggplot(optimal_buying.df) + geom_histogram(mapping = aes(x= time)) + ggtitle("How Often Best Buying Time is vs. Time From Game")
+```
+
+# Does the importance of the game matter in the total amount of trades?
+
+```{r}
+#Translate Round ID
+
+ggplot(allspydata, aes(volume, Stage)) + geom_boxplot()
 ```
